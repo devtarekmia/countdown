@@ -15,7 +15,7 @@
 
   <script>
     const url = new URL(window.location.href);
-    const ws = new WebSocket(`ws://${url.hostname}:6080`);
+    const ws = new WebSocket(`wss://${url.hostname}`);
 
     ws.onmessage = (event) => {
       const recData = JSON.parse(event.data);

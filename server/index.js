@@ -1,7 +1,11 @@
-const WebSocket = require('ws');
 const http = require('http');
+const WebSocket = require('ws');
+const express = require('express');
+const path = require('path');
 
-const server = http.createServer();
+const app = express();
+app.use(express.static(path.join(__dirname, '../')));
+const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 class Countdown {
@@ -11,6 +15,7 @@ class Countdown {
     this.isPaused = false;
     this.isStarted = false;
     this.lots = [];
+    this.copyLots = []; // this line will loop the lots again on next start. remove it
     this.currentLot;
     this.clients = new Set();
   }
@@ -60,6 +65,7 @@ class Countdown {
     this.broadcastCountdown();
     setTimeout(() => {
       this.count = 10;
+      this.lots = [...this.copyLots]; // this line will loop the lots again on next start. remove it
     }, 30)
   }
 
@@ -85,6 +91,7 @@ class Countdown {
 const lots = ['1', '2', '3', '4'];
 const countdown = new Countdown();
 countdown.lots = lots;
+countdown.copyLots = lots; //copy lots for just testing purpose, so that it will restart with that lots again.
 
 
 wss.on('connection', (ws) => {
@@ -114,4 +121,7 @@ wss.on('connection', (ws) => {
   });
 });
 
-server.listen(6080);
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
