@@ -27,6 +27,7 @@ class Countdown {
       return;
     }
     this.isStarted = true;
+    this.status = 'running';
     this.currentLot = this.lots.shift();
     this.interval = setInterval(() => {
       if (!this.isPaused) {
