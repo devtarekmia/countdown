@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>countdown</title>
+</head>
+
+<body>
+  <h1 id="count">not started!</h1>
+  <button id="controle">START</button>
+
+  <h3>Lot# <span id="lot" style="color: brown;"></span></h3>
+
+  <script>
+    const url = new URL(window.location.href);
+    const ws = new WebSocket(`ws://${url.hostname}:6080`);
+
+    ws.onmessage = (event) => {
+      const recData = JSON.parse(event.data);
+      const countdown = parseInt(recData.count);
+      if (countdown >= 0) {
+        document.getElementById('count').innerText = countdown;
+        document.getElementById('lot').innerText = recData.lot || '';
+      } else {
+        document.getElementById('count').innerText = 'Ended!';
+        document.getElementById('controle').innerText = 'Start'.toUpperCase();
+        document.getElementById('lot').innerText = '';
+      }
+    };
+
+    // controller
+    const btn = document.getElementById('controle');
+    btn.addEventListener('click', () => {
+      let status = btn.innerText.toLowerCase();
+      switch (status) {
+        case 'start':
+          ws.send('start');
+          btn.innerText = 'pause'.toUpperCase();
+          break;
+        case 'pause':
+          ws.send('pause');
+          btn.innerText = 'resume'.toUpperCase();
+          break;
+        case 'resume':
+          ws.send('resume');
+          btn.innerText = 'pause'.toUpperCase();
+          break;
+
+        default:
+          ws.send('stop');
+          btn.innerText = 'start'.toUpperCase();
+          break;
+      }
+    });
+
+  </script>
+</body>
+
+</html>
