@@ -20,12 +20,25 @@
     ws.onmessage = (event) => {
       const recData = JSON.parse(event.data);
       const countdown = parseInt(recData.count);
-      if (countdown >= 0) {
+      const status = recData.status;
+      let btnTxt = '';
+      switch (status) {
+        case 'running':
+          btnTxt = 'resume'
+          break;
+        case 'resumed':
+          btnTxt = 'pause'
+          break;
+        default:
+          btnTxt = 'start'
+          break;
+      }
+      if (countdown >= 0 && status !== 'stoped') {
         document.getElementById('count').innerText = countdown;
         document.getElementById('lot').innerText = recData.lot || '';
       } else {
         document.getElementById('count').innerText = 'Ended!';
-        document.getElementById('controle').innerText = 'Start'.toUpperCase();
+        document.getElementById('controle').innerText = btnTxt.toUpperCase();
         document.getElementById('lot').innerText = '';
       }
     };
