@@ -14,7 +14,7 @@ class Countdown {
     this.interval = null;
     this.isPaused = false;
     this.isStarted = false;
-    this.status = 'stoped';
+    this.status;
     this.lots = [];
     this.copyLots = []; // this line will loop the lots again on next start. remove it
     this.currentLot;
@@ -66,10 +66,10 @@ class Countdown {
     this.lots = [];
     this.isPaused = false;
     this.isStarted = false;
-    this.status = 'stoped';
     this.broadcastCountdown();
     setTimeout(() => {
       this.count = 10;
+      this.status = 'stoped';
       this.lots = [...this.copyLots]; // this line will loop the lots again on next start. remove it
     }, 30)
   }
