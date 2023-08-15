@@ -20,9 +20,9 @@
     ws.onmessage = (event) => {
       const recData = JSON.parse(event.data);
       const countdown = parseInt(recData.count);
-      const status = recData.status;
+      const currentstatus = recData.status;
       let btnTxt = '';
-      switch (status) {
+      switch (currentstatus) {
         case 'running':
           btnTxt = 'resume'
           break;
@@ -33,7 +33,7 @@
           btnTxt = 'start'
           break;
       }
-      if (countdown >= 0 && status !== 'stoped') {
+      if (countdown >= 0 && currentstatus !== 'stoped') {
         document.getElementById('count').innerText = countdown;
         document.getElementById('lot').innerText = recData.lot || '';
       } else {
