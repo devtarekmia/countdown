@@ -23,7 +23,7 @@ class Countdown {
 
   start() {
 
-    if (this.isStarted && this.lots.length > 1) {
+    if ((this.isStarted || this.isPaused) && this.lots.length > 1) {
       return;
     }
     this.isStarted = true;
@@ -49,7 +49,6 @@ class Countdown {
   pause() {
     clearInterval(this.interval);
     this.isPaused = true;
-    this.isStarted = false;
     this.status = 'paused';
   }
 
