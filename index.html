@@ -6,18 +6,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>countdown</title>
 </head>
+<style>
+  .container {
+    text-align: center;
+    min-width: 100px;
+    padding: 3rem;
+    margin-top: 1rem;
+  }
+
+  .signals .dot {
+    width: 10px;
+    height: 10px;
+    background: #444;
+    display: inline-block;
+    border-radius: 50%;
+    opacity: 0;
+    animation: blink 0.3s ease-in infinite alternate;
+  }
+
+  .signals .first {
+    margin-left: 0px;
+  }
+
+  .signals .second {
+    margin-left: 15px;
+    animation-delay: 0.1s;
+  }
+
+  .signals .third {
+    margin-left: 15px;
+    animation-delay: 0.2s;
+  }
+
+  @keyframes blink {
+    from {
+      opacity: 0
+    }
+
+    to {
+      opacity: 1
+    }
+  }
+</style>
 
 <body>
-  <h1 id="count">not started!</h1>
-  <button id="controle">START</button>
-  <h3>Lot# <span id="lot" style="color: brown;"></span></h3>
+
+  <div id="t">
+    <div class="container">
+      <div class="signals">
+        <div class="dot first"></div>
+        <div class="dot second"></div>
+        <div class="dot third"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const url = new URL(window.location.href);
-    const ws = new WebSocket(`wss://${url.hostname}`);
-    ws.onopen = () => {
-      ws.send('new_conn');
+    const ws = new WebSocket(`ws://${url.hostname}:8080`);
+    const t = document.getElementById('t');
+    ws.onerror = (error) => {
+      t.innerHTML = `<div class="container"><div class="signals"><div class="dot first"></div><div class="dot second"></div><div class="dot third"></div></div>
+                    </div><div style='color: red; text-align: center;'>Connection Error. Check Console.<div/>`;
+      console.error('WebSocket error:', error);
     };
+    ws.onopen = () => {
+      console.clear();
+    }
     ws.onmessage = (event) => {
       const recData = JSON.parse(event.data);
       const countdown = parseInt(recData.count);
@@ -26,27 +81,48 @@
       switch (currentstatus) {
         case 'paused':
           btnTxt = 'resume'
+          document.title = `⏵ ${countdown}`;
           break;
         case 'running':
-          btnTxt = 'pause'
+          btnTxt = 'pause';
+          document.title = `⏸ ${countdown}`;
           break;
         default:
-          btnTxt = 'start'
+          btnTxt = 'start';
+          document.title = 'countdown';
           break;
       }
-      if (countdown >= 0 && currentstatus !== 'stopped') {
-        document.getElementById('count').innerText = countdown;
-        document.getElementById('lot').innerText = recData.lot || '';
+
+      if (!t.hasAttribute('set')) {
+        t.innerHTML = `
+        <h1 id="count">${countdown >= 0 && currentstatus !== 'stopped' ? countdown : 'Coming Soon!'}</h1>
+        <button type='button' id="control" onclick="control(this);">${btnTxt.toUpperCase()}</button>
+        <h3>Lot# <span id="lot" style="color: brown;">${countdown >= 0 && currentstatus !== 'stopped' ? recData.lot || '' : ''}</span></h3>
+        `;
+        t.setAttribute('set', 'true')
       } else {
-        document.getElementById('count').innerText = 'Ended!';
-        document.getElementById('controle').innerText = btnTxt.toUpperCase();
-        document.getElementById('lot').innerText = '';
+        const lotEl = document.getElementById('lot'),
+          countEl = document.getElementById('count'),
+          controlBtn = document.getElementById('control');
+
+        if (countdown >= 0 && currentstatus !== 'stopped') {
+          countEl.innerText = countdown;
+          controlBtn.innerText.toUpperCase() == btnTxt.toUpperCase() || (controlBtn.innerText = btnTxt.toUpperCase());
+          lotEl.innerText == recData.lot || (lotEl.innerText = recData.lot || '');
+        } else {
+          countEl.innerText = 'Coming Soon!';
+          controlBtn.innerText = btnTxt.toUpperCase();
+          lotEl.innerText = '';
+        }
       }
     };
-
+    ws.onclose = (event) => {
+      t.innerHTML = `<div class="container"><div class="signals"><div class="dot first"></div><div class="dot second"></div><div class="dot third"></div></div>
+                    </div><div style='color: orange; text-align: center;'>Connection Closed. Check Console.<div/>`;
+      console.error('WebSocket connection closed:', event);
+    }
     // controller
-    const btn = document.getElementById('controle');
-    btn.addEventListener('click', () => {
+    function control(btn) {
       let status = btn.innerText.toLowerCase();
       switch (status) {
         case 'start':
@@ -67,7 +143,7 @@
           btn.innerText = 'start'.toUpperCase();
           break;
       }
-    });
+    }
 
   </script>
 </body>

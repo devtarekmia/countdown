@@ -14,20 +14,17 @@ class Countdown {
     this.interval = null;
     this.isPaused = false;
     this.isStarted = false;
-    this.status;
+    this.isRunning = false;
     this.lots = [];
-    this.copyLots = []; // this line will loop the lots again on next start. remove it
+    this.copyLots = []; // will loop the lots again on next start. remove it
     this.currentLot;
     this.clients = new Set();
   }
 
-  start() {
-
-    if ((this.isStarted || !this.isPaused) && this.lots.length > 1) {
-      return;
-    }
+  run() {
     this.isStarted = true;
-    this.currentLot = this.lots.shift();
+    this.isRunning = true;
+    this.isPaused = false;
     this.interval = setInterval(() => {
       if (!this.isPaused) {
         this.count--;
@@ -45,14 +42,30 @@ class Countdown {
     }, 1000);
   }
 
+  start() {
+
+    if (!this.isStarted) {
+      this.currentLot = this.lots.shift();
+      this.run();
+    } else if (this.isPaused) {
+      this.run();
+    } else if (!this.isRunning) {
+      this.run();
+    } else {
+      return;
+    }
+  }
+
   pause() {
-    this.isPaused = true;
     clearInterval(this.interval);
+    this.isPaused = true;
+    this.isRunning = false;
+    this.broadcastCountdown();
   }
 
   resume() {
-    this.isPaused = false;
     this.start();
+    this.broadcastCountdown();
   }
 
   stop() {
@@ -60,18 +73,18 @@ class Countdown {
     this.interval = null;
     this.count = -1;
     this.lots = [];
-    this.isPaused = false;
     this.isStarted = false;
+    this.isRunning = false;
     this.broadcastCountdown();
     setTimeout(() => {
       this.count = 10;
-      this.lots = [...this.copyLots]; // this line will loop the lots again on next start. remove it
-    }, 30)
+      this.lots = [...this.copyLots]; // will loop the lots again on next start. remove it
+    }, 20)
   }
 
   broadcastCountdown() {
     this.clients.forEach(client => {
-      let d = { count: this.count.toString(), lot: this.currentLot, status: this.isStarted ? (this.isPaused ? 'paused' : 'running') : 'stopped' }
+      let d = { count: this.count.toString(), lot: this.currentLot || null, status: this.isStarted ? (this.isPaused ? 'paused' : 'running') : 'stopped' }
       client.send(JSON.stringify(d));
     });
   }
@@ -88,14 +101,15 @@ class Countdown {
   }
 }
 
-const lots = ['1', '2', '3', '4'];
+const lots_arr = ['1', '2', '3', '4'];
 const countdown = new Countdown();
-countdown.lots = lots;
-countdown.copyLots = lots; //copy lots for just testing purpose, so that it will restart with that lots again.
+countdown.lots = [...lots_arr];
+countdown.copyLots = [...lots_arr]; //copy lots for just testing purpose, it will restart with these lots again.
 
 
 wss.on('connection', (ws) => {
   countdown.addClient(ws);
+  ws.send(JSON.stringify({ count: countdown.count.toString(), lot: countdown.currentLot || null, status: countdown.isStarted ? (countdown.isPaused ? 'paused' : 'running') : 'stopped' }));
   ws.on('message', (message) => {
     switch (message.toString()) {
       case 'start':
