@@ -23,11 +23,10 @@ class Countdown {
 
   start() {
 
-    if ((this.isStarted || this.isPaused) && this.lots.length > 1) {
+    if ((this.isStarted || !this.isPaused) && this.lots.length > 1) {
       return;
     }
     this.isStarted = true;
-    this.status = 'running';
     this.currentLot = this.lots.shift();
     this.interval = setInterval(() => {
       if (!this.isPaused) {
@@ -47,15 +46,13 @@ class Countdown {
   }
 
   pause() {
-    clearInterval(this.interval);
     this.isPaused = true;
-    this.status = 'paused';
+    clearInterval(this.interval);
   }
 
   resume() {
     this.isPaused = false;
     this.start();
-    this.status = 'running';
   }
 
   stop() {
@@ -68,14 +65,13 @@ class Countdown {
     this.broadcastCountdown();
     setTimeout(() => {
       this.count = 10;
-      this.status = 'stoped';
       this.lots = [...this.copyLots]; // this line will loop the lots again on next start. remove it
     }, 30)
   }
 
   broadcastCountdown() {
     this.clients.forEach(client => {
-      let d = { count: this.count.toString(), lot: this.currentLot, status: this.status }
+      let d = { count: this.count.toString(), lot: this.currentLot, status: this.isStarted ? (this.isPaused ? 'paused' : 'running') : 'stopped' }
       client.send(JSON.stringify(d));
     });
   }

@@ -10,30 +10,31 @@
 <body>
   <h1 id="count">not started!</h1>
   <button id="controle">START</button>
-
   <h3>Lot# <span id="lot" style="color: brown;"></span></h3>
 
   <script>
     const url = new URL(window.location.href);
     const ws = new WebSocket(`wss://${url.hostname}`);
-
+    ws.onopen = () => {
+      ws.send('new_conn');
+    };
     ws.onmessage = (event) => {
       const recData = JSON.parse(event.data);
       const countdown = parseInt(recData.count);
       const currentstatus = recData.status;
       let btnTxt = '';
       switch (currentstatus) {
-        case 'running':
+        case 'paused':
           btnTxt = 'resume'
           break;
-        case 'resumed':
+        case 'running':
           btnTxt = 'pause'
           break;
         default:
           btnTxt = 'start'
           break;
       }
-      if (countdown >= 0 && currentstatus !== 'stoped') {
+      if (countdown >= 0 && currentstatus !== 'stopped') {
         document.getElementById('count').innerText = countdown;
         document.getElementById('lot').innerText = recData.lot || '';
       } else {
